@@ -41,5 +41,5 @@ Since BFG screenings have multiple sampling steps while handling a complex pool 
 
 
 ### References
-- [Yachie _et al_, 2016](https://www.embopress.org/doi/full/10.15252/msb.20156660) / Initial report of BFG. The codes here were built based on perl scripts provided from [Dr. Nozomu Yachie](http://yachie-lab.org/?nozomuyachie).
-- [Evans-Yamamamto _et al_, 2021 (Preprint)](https://www.biorxiv.org/content/10.1101/2021.07.27.453987v1) / This repositry was created in part of this work to make BFG-PCA accessible. 
+- [Yachie _et al_, 2016](https://www.embopress.org/doi/full/10.15252/msb.20156660) / The initial codes here were built based on perl scripts provided from [Dr. Nozomu Yachie](http://yachie-lab.org/?nozomuyachie).
+- [Evans-Yamamamto _et al_, 2021 (Preprint)](https://www.biorxiv.org/content/10.1101/2021.07.27.453987v1) / This repositry was created in part of this work. 
