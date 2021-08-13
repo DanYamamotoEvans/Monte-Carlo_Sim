@@ -2,8 +2,14 @@ import numpy as np
 import math
 import os
 
+import matplotlib
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+
 from random import seed
 from random import random
+seed(10)
 
 PI    = 4 * math.atan2(1, 1)
 
@@ -48,8 +54,43 @@ def adjust_num(array,CV,pop_size):
 
     for n in range(len(array)):
         val = float(array[n][1])*(float(pop_size)/sum)
-        array[n][1] = val
+        array[n][1] = int(val)
     return array
+
+
+
+
+def adjust_num_d(array_d,CV,pop_size):
+    for n in range(len(array_d)):
+        val = array_d[n]['count']* lograndn(CV)
+        array_d[n]['count'] = val
+
+    sum = np.sum([i['count'] for i in array_d])
+
+    for n in range(len(array_d)):
+        val = float(array_d[n]['count'])*(float(pop_size)/sum)
+        array_d[n]['count'] = int(val)
+    return array_d
+
+
+def adjust_num_d_positions(big_array_d,CV,pop_size):
+    sum = 0
+    for pos in range(len(big_array_d)):
+        pos_sum = float(np.sum([ n['count'] for n in big_array_d[pos] ]))
+        val = pos_sum * lograndn(CV)
+        fold_change = val/pos_sum
+        for n in big_array_d[pos]:
+            n['count'] *= fold_change
+        sum += pos_sum
+
+    for pos in range(len(big_array_d)):
+        for n in big_array_d[pos]:
+            val = float(n['count'])*(float(pop_size)/sum)
+            n['count'] = int(val)
+    return big_array_d
+
+
+
 
 
 
@@ -93,6 +134,17 @@ def print_LL(LL):
 
 
 
+def dms_coverage(dms_array):
+    all_l = []
+    for pos in dms_array:
+        for codon in pos:
+            all_l.append(codon['count'])
+    mx = int(math.log(max(all_l),10)+2)
+    cov = [["Threashold".ljust(mx+1),"Percentage".ljust(mx+1)]]
+    for th in range(0,mx):
+        val = above_threshold(all_l,10**th)*100
+        cov.append([str(10**th).ljust(mx+1),str(round(val,2)).ljust(mx+1)])
+    return cov
 
 
 def mating(hap_x,hap_y):
@@ -144,6 +196,40 @@ def positive_interaction(array,CV_pos,CV_autoactivity,pos_rate,pop_size):
 
     return array
 
+
+####FIX this. Make ir like te BFG pipeline.
+def dms_selection(big_array_d,CV_pos,CV_codon,lethality_rate_codon,lethality_rate_pos,pop_size):
+    th_pos   =  len(big_array_d)*lethality_rate_pos
+    th_codon =  len(big_array_d)*lethality_rate_codon
+    POS = {}
+    for pos in range(len(big_array_d)):
+        POS[pos] = lograndn(CV_pos)
+    sum = 0
+    for pos in range(len(big_array_d)):
+        # Only affecting codon which aren;t WT.
+        pos_sum = float(np.sum([ n['count'] for n in big_array_d[pos][1:] ]))
+        val = pos_sum /lograndn(CV_codon) / POS[pos]
+        fold_change = val/pos_sum
+        for n in big_array_d[pos][1:]:
+            n['count'] *= fold_change
+        pos_sum = float(np.sum([ n['count'] for n in big_array_d[pos] ]))
+        sum += pos_sum
+
+
+    for pos in range(len(big_array_d)):
+        for n in big_array_d[pos]:
+            val = float(n['count'])*(float(pop_size)/sum)
+            n['count'] = int(val)
+    return big_array_d
+
+
+
+
+
+
+
+
+
 def abundance(array):
     dip = {}
     sum = 0
@@ -193,3 +279,81 @@ def format_array(array):
         l = [i[0][0],i[0][1],i[1]]
         LL.append(l)
     return LL
+
+
+def plot_DMS_hm(DMS_data,title):
+    my_amino_acid_order = ['A','C','D','E','F','G','H','I','K','L','M','N','P','Q','R','S','T','V','W','Y',"*"]
+    codon_table = {
+                'A': ['GCT', 'GCC', 'GCA', 'GCG'],
+                'C': ['TGT', 'TGC'],
+                'D': ['GAT', 'GAC'],
+                'E': ['GAA', 'GAG'],
+                'F': ['TTT', 'TTC'],
+                'G': ['GGT', 'GGC', 'GGA', 'GGG'],
+                'H': ['CAT', 'CAC'],
+                'I': ['ATT', 'ATC', 'ATA'],
+                'K': ['AAA', 'AAG'],
+                'L': ['TTA', 'TTG', 'CTT', 'CTC', 'CTA', 'CTG'],
+                'M': ['ATG'],
+                'N': ['AAT', 'AAC'],
+                'P': ['CCT', 'CCC', 'CCA', 'CCG'],
+                'Q': ['CAA', 'CAG'],
+                'R': ['CGT', 'CGC', 'CGA', 'CGG', 'AGA', 'AGG'],
+                'S': ['TCT', 'TCC', 'TCA', 'TCG', 'AGT', 'AGC'],
+                'T': ['ACT', 'ACC', 'ACA', 'ACG'],
+                'V': ['GTT', 'GTC', 'GTA', 'GTG'],
+                'W': ['TGG'],
+                'Y': ['TAT', 'TAC'],
+                "*": ['TAG','TAG','TAA']
+                }
+    array_data = []
+    for pos in DMS_data:
+        array = [i['count'] for i in pos ]
+        array_data.append(array)
+    array_data = np.array(array_data).transpose()
+
+    a2 = []
+    for pos in DMS_data:
+        for codon in pos:
+            a2.append(codon['count'])
+
+    dms_region_len = len(DMS_data)
+    #pprint(array_data)
+    fig, ax = plt.subplots( figsize=(15,dms_region_len/2))
+    im = ax.imshow(array_data,vmin=0,
+                        vmax=max(a2)*1.2)
+
+    ylab = []
+    for aa in my_amino_acid_order:
+        #print(aa)
+        for codon in codon_table[aa]:
+            #print(codon)
+            ylab.append("%s  (%s)"%(codon,aa))
+
+    dms_region_len = len(DMS_data)
+
+    # We want to show all ticks...
+    ax.set_yticks(np.arange(len(ylab)))
+    ax.set_xticks(np.arange(dms_region_len))
+    # ... and label them with the respective list entries
+    ax.set_xticklabels([i for i in range(1,dms_region_len+1)])
+    ax.set_yticklabels(ylab)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=90, ha="right",
+             rotation_mode="anchor")
+
+    """
+    # Loop over data dimensions and create text annotations.
+    for i in range(len(vegetables)):
+        for j in range(len(farmers)):
+            text = ax.text(j, i, harvest[i, j],
+                           ha="center", va="center", color="w")
+    """
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="2.5%", pad=0.5)
+
+    plt.colorbar(im, cax=cax,ticks=range(0,int(max(a2)*1.2),int((max(a2)*1.2)/5)))
+    ax.set_title(title)
+    fig.tight_layout()
+    plt.show()
