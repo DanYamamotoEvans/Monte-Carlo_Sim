@@ -12,7 +12,6 @@ pip    version >= 1.1.0
 Dependencies :
 ```sh
 numpy  version >=1.19 
-tqdm   version >=2.2.4
 ```
 To install these pakcages, first clone this repository by
 ```sh
