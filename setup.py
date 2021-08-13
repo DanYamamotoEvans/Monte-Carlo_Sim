@@ -7,9 +7,9 @@ requirementPath = PATH + '/requirements.txt'
 if os.path.isfile(requirementPath):
     with open(requirementPath) as f:
         require_list = list(f.read().splitlines())
-       
+
 setup(
-    name="BFG",
+    name="Monte-Carlo_Sim",
     version="1.0.0",
     install_requires= require_list,
     extras_require={}
