@@ -89,7 +89,25 @@ def adjust_num_d_positions(big_array_d,CV,pop_size):
             n['count'] = int(val)
     return big_array_d
 
+def adjust_num_d_dms(big_array_d,CV,pop_size):
+    sum = 0
+    for pos in range(len(big_array_d)):
+        for n in range(len(big_array_d[pos])):
+            val =big_array_d[pos][n]['count']* lograndn(CV)
+            big_array_d[pos][n]['count'] = val
 
+            sum += val
+
+    for pos in range(len(big_array_d)):
+        for n in range(len(big_array_d[pos])):
+            val = float(big_array_d[pos][n]['count'])*(float(pop_size)/sum)
+            big_array_d[pos][n]['count'] = int(val)
+    return big_array_d
+
+
+
+
+    return big_array_d
 
 
 
@@ -203,12 +221,12 @@ def dms_selection(big_array_d,CV_pos,CV_codon,lethality_rate_codon,lethality_rat
     th_codon =  len(big_array_d)*lethality_rate_codon
     POS = {}
     for pos in range(len(big_array_d)):
-        POS[pos] = lograndn(CV_pos)
+        POS[pos] = 1 - np.abs(1-lograndn(CV_pos))
     sum = 0
     for pos in range(len(big_array_d)):
         # Only affecting codon which aren;t WT.
         pos_sum = float(np.sum([ n['count'] for n in big_array_d[pos][1:] ]))
-        val = pos_sum /lograndn(CV_codon) / POS[pos]
+        val = pos_sum / (1 -  np.abs(1-lograndn(CV_codon))) / POS[pos]
         fold_change = val/pos_sum
         for n in big_array_d[pos][1:]:
             n['count'] *= fold_change
@@ -315,13 +333,13 @@ def plot_DMS_hm(DMS_data,title):
     a2 = []
     for pos in DMS_data:
         for codon in pos:
-            a2.append(codon['count'])
+            a2.append(codon['count'] )
 
     dms_region_len = len(DMS_data)
     #pprint(array_data)
     fig, ax = plt.subplots( figsize=(15,dms_region_len/2))
     im = ax.imshow(array_data,vmin=0,
-                        vmax=max(a2)*1.2)
+                        vmax=max(a2)*1.5)
 
     ylab = []
     for aa in my_amino_acid_order:
@@ -353,7 +371,7 @@ def plot_DMS_hm(DMS_data,title):
     divider = make_axes_locatable(ax)
     cax = divider.append_axes("right", size="2.5%", pad=0.5)
 
-    plt.colorbar(im, cax=cax,ticks=range(0,int(max(a2)*1.2),int((max(a2)*1.2)/5)))
+    plt.colorbar(im, cax=cax,ticks=range(0,int(max(a2)*1.5),int(int(max(a2)*1.5)/10)))
     ax.set_title(title)
     fig.tight_layout()
     plt.show()
